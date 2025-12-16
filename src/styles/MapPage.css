@@ -56,6 +56,32 @@
   padding: 20px;
 }
 
+.leaflet-map-wrapper {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  height: 600px;
+}
+
+.leaflet-map-wrapper .leaflet-container {
+  height: 100%;
+  width: 100%;
+  border-radius: 8px;
+}
+
+.popup-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.popup-content p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #4b5563;
+}
+
 .world-map {
   width: 100%;
   height: auto;

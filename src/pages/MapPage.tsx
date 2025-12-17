@@ -1,5 +1,15 @@
-import React, { useState } from 'react';
-import '../styles/MapPage.css';
+import React, { useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { Icon } from "leaflet";
+import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "../styles/MapPage.css";
+
+const worldBounds: LatLngBoundsExpression = [
+  [-90, -180],
+  [90, 180],
+];
+const mapCenter: LatLngExpression = [39.9334, 32.8597];
 
 interface CityData {
   city: string;
@@ -9,7 +19,6 @@ interface CityData {
   description: string;
 }
 
-// Başkent mezunlarının çalıştığı şehirler (mock data)
 const CITIES_WITH_ALUMNI: CityData[] = [
   {
     city: 'İstanbul',
@@ -69,26 +78,21 @@ const CITIES_WITH_ALUMNI: CityData[] = [
   },
 ];
 
+const customIcon = new Icon({
+  iconUrl: "/images/marker-icon.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
 export const MapPage: React.FC = () => {
   const [selectedCity, setSelectedCity] = useState<CityData | null>(null);
 
-  // Basit 2D projeksiyon - enlemi ve boylamı ekrana dönüştür
-  const projectCoordinates = (lat: number, lng: number) => {
-    // Dünya haritasının genişliği ve yüksekliği
-    const mapWidth = 1200;
-    const mapHeight = 600;
-
-    // Mercator projeksiyonu yaklaşımı
-    const x = ((lng + 180) / 360) * mapWidth;
-    const y =
-      ((180 - Math.asin(Math.sin((lat * Math.PI) / 180)) * Math.cos(0)) * 180) /
-      Math.PI;
-    const yNormalized = ((y + 90) / 180) * mapHeight;
-
-    return { x, y: yNormalized };
-  };
-
-  const totalAlumni = CITIES_WITH_ALUMNI.reduce((sum, city) => sum + city.alumni, 0);
+  const totalAlumni = CITIES_WITH_ALUMNI.reduce(
+    (sum, city) => sum + city.alumni,
+    0,
+  );
 
   return (
     <div className="map-page">
@@ -97,162 +101,69 @@ export const MapPage: React.FC = () => {
         <p>Başkent Üniversitesi mezunlarının çalıştığı şehirler</p>
         <div className="stats">
           <span>Toplam Mezun: {totalAlumni}</span>
-          <span>Ülke Sayısı: {new Set(CITIES_WITH_ALUMNI.map(c => c.country)).size}</span>
+          <span>
+            Ülke Sayısı:{" "}
+            {new Set(CITIES_WITH_ALUMNI.map((c) => c.country)).size}
+          </span>
           <span>Şehir Sayısı: {CITIES_WITH_ALUMNI.length}</span>
         </div>
       </div>
 
       <div className="map-container">
-        {/* Placeholder Harita */}
-        <div className="map-placeholder">
-          <svg
-            width="1200"
-            height="600"
-            viewBox="0 0 1200 600"
-            className="world-map"
+        <div className="leaflet-map-wrapper">
+          <MapContainer
+            center={mapCenter}
+            zoom={3}
+            minZoom={2.75}
+            className="leaflet-container"
+            scrollWheelZoom={true}
+            maxBounds={worldBounds}
+            maxBoundsViscosity={1.0}
           >
-            {/* Dünya haritası arka planı - basit grid */}
-            <defs>
-              <pattern
-                id="grid"
-                width="60"
-                height="60"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M 60 0 L 0 0 0 60"
-                  fill="none"
-                  stroke="#e0e0e0"
-                  strokeWidth="0.5"
-                />
-              </pattern>
-            </defs>
-
-            {/* Grid */}
-            <rect width="1200" height="600" fill="url(#grid)" />
-
-            {/* Harita çerçevesi */}
-            <rect
-              width="1200"
-              height="600"
-              fill="none"
-              stroke="#999"
-              strokeWidth="2"
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              noWrap={true}
             />
-
-            {/* Meridyen ve paralelller */}
-            {[0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150].map(lng => (
-              <line
-                key={`lng-${lng}`}
-                x1={((lng + 180) / 360) * 1200}
-                y1="0"
-                x2={((lng + 180) / 360) * 1200}
-                y2="600"
-                stroke="#f0f0f0"
-                strokeWidth="0.5"
-              />
-            ))}
-
-            {[0, 20, 40, 60].map(lat => {
-              const y =
-                ((180 -
-                  Math.asin(Math.sin((lat * Math.PI) / 180)) *
-                    Math.cos(0)) *
-                  180) /
-                Math.PI;
-              const yNormalized = ((y + 90) / 180) * 600;
-              return (
-                <line
-                  key={`lat-${lat}`}
-                  x1="0"
-                  y1={yNormalized}
-                  x2="1200"
-                  y2={yNormalized}
-                  stroke="#f0f0f0"
-                  strokeWidth="0.5"
-                />
-              );
-            })}
-
-            {/* Şehir işaretleyicileri */}
-            {CITIES_WITH_ALUMNI.map(city => {
-              const { x, y } = projectCoordinates(
+            {CITIES_WITH_ALUMNI.map((city) => {
+              const position: LatLngExpression = [
                 city.coordinates.lat,
-                city.coordinates.lng
-              );
-              const isSelected = selectedCity?.city === city.city;
-
+                city.coordinates.lng,
+              ];
               return (
-                <g key={city.city}>
-                  {/* Işık halkası */}
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={city.alumni / 2}
-                    fill="rgba(59, 130, 246, 0.1)"
-                  />
-
-                  {/* Ana noktası */}
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={8}
-                    fill={isSelected ? '#dc2626' : '#3b82f6'}
-                    stroke="white"
-                    strokeWidth="2"
-                    style={{ cursor: 'pointer', transition: 'all 0.3s' }}
-                    onClick={() => setSelectedCity(city)}
-                  />
-
-                  {/* Şehir etiketi */}
-                  <text
-                    x={x}
-                    y={y - 20}
-                    textAnchor="middle"
-                    fontSize="12"
-                    fontWeight="bold"
-                    fill="#333"
-                    className="city-label"
-                  >
-                    {city.city}
-                  </text>
-
-                  {/* Mezun sayısı */}
-                  <text
-                    x={x}
-                    y={y + 25}
-                    textAnchor="middle"
-                    fontSize="11"
-                    fill="#666"
-                    className="alumni-count"
-                  >
-                    {city.alumni} mezun
-                  </text>
-                </g>
+                <Marker
+                  key={city.city}
+                  position={position}
+                  icon={customIcon}
+                  eventHandlers={{
+                    click: () => setSelectedCity(city),
+                  }}
+                >
+                  <Popup>
+                    <div className="popup-content">
+                      <h3>
+                        {city.city}, {city.country}
+                      </h3>
+                      <p>
+                        <strong>{city.alumni}</strong> mezun
+                      </p>
+                      <p>{city.description}</p>
+                    </div>
+                  </Popup>
+                </Marker>
               );
             })}
-
-            {/* Harita notası */}
-            <text
-              x="600"
-              y="30"
-              textAnchor="middle"
-              fontSize="14"
-              fill="#666"
-              fontStyle="italic"
-            >
-              * Google Maps API entegrasyonu için placeholder harita
-            </text>
-          </svg>
+          </MapContainer>
         </div>
 
-        {/* Şehir Detayları Paneli */}
         <div className="city-details-panel">
           <h2>Şehir Listesi</h2>
 
           {selectedCity && (
             <div className="selected-city-info">
-              <h3>{selectedCity.city}, {selectedCity.country}</h3>
+              <h3>
+                {selectedCity.city}, {selectedCity.country}
+              </h3>
               <div className="detail-row">
                 <span className="label">Mezun Sayısı:</span>
                 <span className="value badge">{selectedCity.alumni}</span>
@@ -276,11 +187,11 @@ export const MapPage: React.FC = () => {
 
           <div className="cities-list">
             {CITIES_WITH_ALUMNI.sort((a, b) => b.alumni - a.alumni).map(
-              city => (
+              (city) => (
                 <div
                   key={city.city}
                   className={`city-item ${
-                    selectedCity?.city === city.city ? 'active' : ''
+                    selectedCity?.city === city.city ? "active" : ""
                   }`}
                   onClick={() => setSelectedCity(city)}
                 >
@@ -288,22 +199,12 @@ export const MapPage: React.FC = () => {
                     <h4>{city.city}</h4>
                     <p className="country">{city.country}</p>
                   </div>
-                  <div className="alumni-badge">
-                    {city.alumni}
-                  </div>
+                  <div className="alumni-badge">{city.alumni}</div>
                 </div>
-              )
+              ),
             )}
           </div>
         </div>
-      </div>
-
-      {/* Google Maps API Uyarısı */}
-      <div className="api-note">
-        <p>
-          <strong>Not:</strong> Bu harita placeholder'dır. Gerçek harita için Google Maps API entegrasyonu yapılacaktır.
-          API anahtarınızı environment değişkenlerine ekledikten sonra, InteractiveMap bileşeni yerinde kullanılacaktır.
-        </p>
       </div>
     </div>
   );

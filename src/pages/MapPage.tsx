@@ -19,7 +19,7 @@ const CITIES_WITH_ALUMNI: CityData[] = [
   {
     city: "İstanbul",
     country: "Türkiye",
-    alumni: 40,
+    alumni: 45,
     coordinates: { lat: 41.0082, lng: 28.9784 },
     description: "Teknoloji, Finans, Medya",
   },

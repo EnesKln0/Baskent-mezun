@@ -1,14 +1,10 @@
 import React, { useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { Icon } from "leaflet";
-import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
+import type { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "../styles/MapPage.css";
 
-const worldBounds: LatLngBoundsExpression = [
-  [-90, -180],
-  [90, 180],
-];
 const mapCenter: LatLngExpression = [39.9334, 32.8597];
 
 interface CityData {
@@ -116,17 +112,15 @@ export const MapPage: React.FC = () => {
         <div className="leaflet-map-wrapper">
           <MapContainer
             center={mapCenter}
-            zoom={3}
-            minZoom={2.75}
+            zoom={5}
+            minZoom={3}
             className="leaflet-container"
             scrollWheelZoom={true}
-            maxBounds={worldBounds}
-            maxBoundsViscosity={1.0}
+            worldCopyJump={true}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              noWrap={true}
             />
             {CITIES_WITH_ALUMNI.map((city) => {
               const position: LatLngExpression = [
